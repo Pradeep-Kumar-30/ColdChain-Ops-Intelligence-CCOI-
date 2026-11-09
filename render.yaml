@@ -1,0 +1,44 @@
+services:
+  - type: web
+    name: coldchain-ops-intelligence
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: Agent_llm
+        value: OPENAI
+      - key: OPEN_MODEL
+        value: gpt-4o-mini
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: PINECONE_API_KEY
+        sync: false
+      - key: PINECONE_INDEX_NAME
+        value: fde-sop-index-local
+      - key: PINECONE_NAMESPACE
+        value: incident-runbooks
+      - key: PINECONE_CLOUD
+        value: aws
+      - key: PINECONE_REGION
+        value: us-east-1
+      - key: Embeddings_model
+        value: LOCAL
+      - key: Local_Embeddings_model
+        value: BAAI/bge-m3
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: SQL_SERVER_HOST
+        value: 3.111.23.163
+      - key: SQL_SERVER_PORT
+        value: "1433"
+      - key: SQL_ADMIN_USER
+        value: sa
+      - key: SQL_ADMIN_PASSWORD
+        sync: false
+      - key: SQL_AGENT_USER
+        value: USR_FDE_RO
+      - key: SQL_AGENT_PASSWORD
+        sync: false
