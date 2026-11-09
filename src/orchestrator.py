@@ -28,7 +28,7 @@ class AgentState(TypedDict):
 # 2. FACTORY INITIALIZATION: AGENT REASONER LLM
 # ==========================================
 
-AGENT_LLM_SETTING = os.getenv("Agent_llm", "OLLAMA").strip().upper()
+AGENT_LLM_SETTING = os.getenv("Agent_llm", "OPENAI").strip().upper()
 
 if AGENT_LLM_SETTING == "DEMO":
     fde_tools = []
@@ -41,31 +41,29 @@ else:
 if AGENT_LLM_SETTING == "DEMO":
     llm_with_tools = None
 elif AGENT_LLM_SETTING == "OPENAI":
-    print("🤖 Brain Mode: Utilizing Cloud OpenAI Reasoner (gpt-4o)...")
+    model_name = os.getenv("OPEN_MODEL", "gpt-4o-mini").strip()
+    print(f"🤖 Brain Mode: Utilizing Cloud OpenAI Reasoner ({model_name})...")
     from langchain_openai import ChatOpenAI
-    llm = ChatOpenAI(model="gpt-4o", temperature=0)
-
-elif AGENT_LLM_SETTING == "DEEPSEEK":
-    print("🐳 Brain Mode: Utilizing Flagship DeepSeek Cloud Reasoner (deepseek-v4-pro)...")
-    from langchain_openai import ChatOpenAI
-    
-    # Fully updated to match 2026 DeepSeek API parameters and endpoint contracts
     llm = ChatOpenAI(
-        model="deepseek-v4-flash",                           # deepseek-v4-flash, deepseek-v4-pro
+        model=model_name,
         temperature=0,
-        openai_api_key=os.getenv("DEEPSEEK_API_KEY"),
-        base_url="https://api.deepseek.com",     # Fixed connection string url endpoint
-        max_tokens=2048,                                   # Gives the deep reasoner plenty of output runway
-        # extra_body={
-        #     "thinking": {"type": "enabled"},              # Activates DeepSeek Deep-Thinking mode
-        #     "reasoning_effort": "high"                     # Drives maximal reasoning depth for logic maps
-        # }
+        openai_api_key=os.getenv("OPENAI_API_KEY")
     )
 
-else:  # FALLBACK / DEFAULT RUNNER MODE
+elif AGENT_LLM_SETTING == "OLLAMA":
     print("🤗 Brain Mode: Local Fallback Activated. Binding Local Ollama (qwen2.5:7b)...")
     from langchain_community.chat_models import ChatOllama
     llm = ChatOllama(model="qwen2.5:7b", temperature=0, num_predict=1024)
+
+else:
+    model_name = os.getenv("OPEN_MODEL", "gpt-4o-mini").strip()
+    print(f"🤖 Brain Mode: Defaulting to Cloud OpenAI Reasoner ({model_name})...")
+    from langchain_openai import ChatOpenAI
+    llm = ChatOpenAI(
+        model=model_name,
+        temperature=0,
+        openai_api_key=os.getenv("OPENAI_API_KEY")
+    )
 
 if AGENT_LLM_SETTING != "DEMO":
     llm_with_tools = llm.bind_tools(fde_tools)
@@ -93,7 +91,7 @@ def reasoning_node(state: AgentState):
     response = llm_with_tools.invoke(state["messages"])
     return {"messages": [response]}
 
-print("Compiling LangGraph FDE orchestrator...")
+print("Compiling LangGraph ColdChain-Ops-Intelligence (CCOI) orchestrator...")
 graph_builder = StateGraph(AgentState)
 graph_builder.add_node("reasoner", reasoning_node)
 graph_builder.add_edge(START, "reasoner")
@@ -111,7 +109,7 @@ fde_agent = graph_builder.compile(checkpointer=MemorySaver())
 # ==========================================
 if __name__ == "__main__":
     print("\n" + "="*55)
-    print("🚀 FDE Supply Chain Orchestrator State Machine Online")
+    print("🚀 ColdChain-Ops-Intelligence (CCOI) Orchestrator State Machine Online")
     print(f"   Configured Execution: [LLM: {AGENT_LLM_SETTING}] -> [Embeddings: {os.getenv('Embeddings_model', 'LOCAL')}]")
     print("="*55 + "\n")
     

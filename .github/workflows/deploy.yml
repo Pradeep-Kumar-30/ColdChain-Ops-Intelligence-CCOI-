@@ -1,17 +1,21 @@
-name: Enterprise Manual Deploy
+name: ColdChain-Ops-Intelligence CI/CD Deployment
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       environment:
         description: 'Target Environment'
-        required: true
+        required: false
         default: 'FDE-YT-Cold'
 
 jobs:
   deploy:
+    name: Deploy to EC2
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+    environment: ${{ inputs.environment || 'FDE-YT-Cold' }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -23,7 +27,18 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /home/ubuntu/cold-chain-logistics-FDE-Project
+            if [ -d "/home/ubuntu/cold-chain-logistics-FDE-Project" ]; then
+              cd /home/ubuntu/cold-chain-logistics-FDE-Project
+            elif [ -d "/home/ubuntu/ColdChain-Ops-Intelligence-CCOI-" ]; then
+              cd /home/ubuntu/ColdChain-Ops-Intelligence-CCOI-
+            else
+              cd /home/ubuntu/cold-chain-logistics*
+            fi
             git pull origin main
-            source venv/bin/activate
+            if [ -d "venv" ]; then
+              source venv/bin/activate
+            elif [ -d ".venv" ]; then
+              source .venv/bin/activate
+            fi
+            pip install -r requirements.txt
             sudo systemctl restart streamlit

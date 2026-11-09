@@ -1,6 +1,6 @@
-# Cold-Chain Logistics Dispatch Console
+# ColdChain-Ops-Intelligence (CCOI)
 
-A Streamlit dispatch console for asking questions about fleet telemetry, corridor conditions, and cold-chain procedures. In live mode, a LangGraph agent can query a SQL Server view, check current weather from Open-Meteo, and retrieve relevant procedures from Pinecone. The console also includes an administrator-only audit-log view.
+A Streamlit operations console for ColdChain-Ops-Intelligence (CCOI) to monitor fleet telemetry, corridor conditions, and cold-chain procedures. In live mode, a LangGraph agent can query a SQL Server view, check current weather from Open-Meteo, and retrieve relevant procedures from Pinecone. The console also includes an administrator-only audit-log view.
 
 The repository includes a local fleet dataset and a sample cold-chain SOP. Live answers require the external services and credentials described below. In `DEMO` mode, the interface runs without those services and returns an explicit placeholder rather than a shipment assessment.
 

@@ -70,7 +70,7 @@ def write_audit_log(session_id, node_name, tool_name, content):
 # 3. PAGE CONFIGURATION & ENTERPRISE THEME
 # ==========================================
 st.set_page_config(
-    page_title="FDE Supply Chain Dispatch Console",
+    page_title="ColdChain-Ops-Intelligence (CCOI)",
     page_icon="🧊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -106,7 +106,7 @@ thread_config = {"configurable": {"thread_id": st.session_state.thread_id}}
 # ==========================================
 with st.sidebar:
     st.image(str(script_dir / "image_L25X5q.png") if (script_dir / "image_L25X5q.png").exists() else "https://cdn-icons-png.flaticon.com/512/2830/2830305.png", width=65)
-    st.title("FDE Command Center")
+    st.title("ColdChain-Ops-Intelligence (CCOI)")
     
     app_mode = st.radio("System Mode", ["🧊 Dispatch Console", "🛡️ Security & Audit Logs"])
     
@@ -128,8 +128,8 @@ if app_mode == "🧊 Dispatch Console":
     # ------------------------------------------
     # TAB 1: CHAT UI & AGENT EXECUTION
     # ------------------------------------------
-    st.title("Cold-Chain Incident Control Dashboard")
-    st.caption("Production Data Engineering Pipeline • Real-Time Decision Optimization Platform")
+    st.title("ColdChain-Ops-Intelligence (CCOI)")
+    st.caption("Operations Intelligence & Real-Time Incident Control Dashboard")
 
     for entry in st.session_state.ui_messages:
         with st.chat_message(entry["role"], avatar="👤" if entry["role"] == "user" else "🤖"):
@@ -155,72 +155,89 @@ if app_mode == "🧊 Dispatch Console":
             current_traces = [] 
             
             with st.status("🧠 Initializing Core Reasoner Node...", expanded=True) as status:
-                events = fde_agent.stream(
-                    {"messages": [HumanMessage(content=user_input)]}, 
-                    config=thread_config,
-                    stream_mode="updates"
-                )
-                
-                for event in events:
-                    for node_name, node_state in event.items():
-                        
-                        if node_name == "reasoner":
-                            latest_msg = node_state["messages"][-1]
+                try:
+                    events = fde_agent.stream(
+                        {"messages": [HumanMessage(content=user_input)]}, 
+                        config=thread_config,
+                        stream_mode="updates"
+                    )
+                    
+                    for event in events:
+                        for node_name, node_state in event.items():
                             
-                            # A. Intercept Tool Call Requests (Inputs)
-                            if hasattr(latest_msg, "tool_calls") and latest_msg.tool_calls:
-                                status.update(label="🧠 Agent generated tool parameters...")
-                                for tool_call in latest_msg.tool_calls:
-                                    st.markdown(f"**⚡ Intent Recognized:** `{tool_call['name']}`")
-                                    with st.expander(f"📥 View Generated Input ({tool_call['name']})", expanded=False):
-                                        st.json(tool_call['args'])
-                                    
-                                    current_traces.append({
-                                        "type": "tool_input",
-                                        "name": tool_call['name'],
-                                        "args": tool_call['args']
-                                    })
-                                    
-                                    write_audit_log(
-                                        session_id=st.session_state.thread_id,
-                                        node_name="reasoner",
-                                        tool_name=tool_call['name'],
-                                        content=json.dumps(tool_call['args'])
-                                    )
-                            
-                            # B. Intercept Final Generation
-                            if latest_msg.content:
-                                final_response = latest_msg.content
-                                status.update(label="📝 Generating Operational Resolution Report...")
+                            if node_name == "reasoner":
+                                latest_msg = node_state["messages"][-1]
                                 
-                                write_audit_log(
-                                    session_id=st.session_state.thread_id,
-                                    node_name="reasoner_final",
-                                    tool_name="LLM Text Synthesis",
-                                    content=final_response
-                                )
-                                
-                        elif node_name == "tools":
-                            status.update(label="🔧 Executing Enterprise Subsystem Tools...")
-                            for msg in node_state.get("messages", []):
-                                if isinstance(msg, ToolMessage):
-                                    with st.expander(f"📤 View Raw Output ({msg.name})", expanded=False):
-                                        st.code(msg.content, language="text")
+                                # A. Intercept Tool Call Requests (Inputs)
+                                if hasattr(latest_msg, "tool_calls") and latest_msg.tool_calls:
+                                    status.update(label="🧠 Agent generated tool parameters...")
+                                    for tool_call in latest_msg.tool_calls:
+                                        st.markdown(f"**⚡ Intent Recognized:** `{tool_call['name']}`")
+                                        with st.expander(f"📥 View Generated Input ({tool_call['name']})", expanded=False):
+                                            st.json(tool_call['args'])
                                         
-                                    current_traces.append({
-                                        "type": "tool_output",
-                                        "name": msg.name,
-                                        "content": msg.content
-                                    })
+                                        current_traces.append({
+                                            "type": "tool_input",
+                                            "name": tool_call['name'],
+                                            "args": tool_call['args']
+                                        })
+                                        
+                                        write_audit_log(
+                                            session_id=st.session_state.thread_id,
+                                            node_name="reasoner",
+                                            tool_name=tool_call['name'],
+                                            content=json.dumps(tool_call['args'])
+                                        )
+                                
+                                # B. Intercept Final Generation
+                                if latest_msg.content:
+                                    final_response = latest_msg.content
+                                    status.update(label="📝 Generating Operational Resolution Report...")
                                     
                                     write_audit_log(
                                         session_id=st.session_state.thread_id,
-                                        node_name="tools",
-                                        tool_name=msg.name,
-                                        content=msg.content
+                                        node_name="reasoner_final",
+                                        tool_name="LLM Text Synthesis",
+                                        content=final_response
                                     )
-                
-                status.update(label="Incident Matrix Evaluation Complete", state="complete", expanded=False)
+                                    
+                            elif node_name == "tools":
+                                status.update(label="🔧 Executing Enterprise Subsystem Tools...")
+                                for msg in node_state.get("messages", []):
+                                    if isinstance(msg, ToolMessage):
+                                        with st.expander(f"📤 View Raw Output ({msg.name})", expanded=False):
+                                            st.code(msg.content, language="text")
+                                            
+                                        current_traces.append({
+                                            "type": "tool_output",
+                                            "name": msg.name,
+                                            "content": msg.content
+                                        })
+                                        
+                                        write_audit_log(
+                                            session_id=st.session_state.thread_id,
+                                            node_name="tools",
+                                            tool_name=msg.name,
+                                            content=msg.content
+                                        )
+                    
+                    status.update(label="Incident Matrix Evaluation Complete", state="complete", expanded=False)
+                except Exception as e:
+                    err_msg = str(e)
+                    status.update(label="⚠️ Model Request Failed", state="error", expanded=True)
+                    if "credit_balance_exhausted" in err_msg or "insufficient_quota" in err_msg or "429" in err_msg:
+                        final_response = (
+                            "⚠️ **OpenAI API Quota Exhausted**: Your OpenAI account has no credits remaining.\n\n"
+                            "👉 Please add billing credits at [OpenAI Billing Settings](https://platform.openai.com/settings/organization/billing).\n\n"
+                            "*Tip: You can set `Agent_llm=DEMO` in `.env` to test the UI offline without API credits.*"
+                        )
+                    elif "insufficient_balance" in err_msg or "402" in err_msg:
+                        final_response = (
+                            "⚠️ **API Balance Depleted (Error 402)**: The configured model provider has insufficient balance.\n\n"
+                            "👉 Please check your billing balance or update your API key in `.env`."
+                        )
+                    else:
+                        final_response = f"⚠️ **Execution Error**: {err_msg}"
                 
             if final_response:
                 st.markdown(final_response)
@@ -238,8 +255,8 @@ elif app_mode == "🛡️ Security & Audit Logs":
     # ------------------------------------------
     # TAB 2: AUDIT LOG VIEWER (REQUIRES ADMIN CREDENTIALS FROM .ENV OR INPUT)
     # ------------------------------------------
-    st.title("🛡️ Enterprise Agent Audit Trail")
-    st.caption("Secure database inspection of FDE_VIEWS.AgentAuditLog")
+    st.title("🛡️ CCOI Security & Audit Trail")
+    st.caption("Secure ColdChain-Ops-Intelligence database inspection (FDE_VIEWS.AgentAuditLog)")
     
     st.markdown("### Database Authorization Gate")
     st.markdown("Enter high-privilege administrative credentials (defined in `.env` as `SQL_ADMIN_USER`) to query audit logs.")
